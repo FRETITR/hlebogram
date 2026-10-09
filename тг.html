@@ -1,0 +1,2292 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<title>Notebook Telegram — Хлеб Премиум</title>
+<style>
+  :root {
+    --bg: #17212b;
+    --bg-side: #0e1621;
+    --bg-input: #242f3d;
+    --bg-msg-bot: #182533;
+    --bg-msg-me: #2b5278;
+    --bg-hover: #202b36;
+    --bg-card: #1e2a37;
+    --border: #101921;
+    --text: #ffffff;
+    --text-dim: #7d8b99;
+    --accent: #5288c1;
+    --accent-hover: #6da0d8;
+    --stars: #f5c542;
+    --bread: linear-gradient(135deg, #d4a24e, #8b5a2b, #f5c542);
+    --bread-plus: linear-gradient(135deg, #ffd700, #ff8c00, #e17076, #a695e7);
+  }
+  body.light {
+    --bg: #ffffff;
+    --bg-side: #f4f4f5;
+    --bg-input: #f0f0f0;
+    --bg-msg-bot: #f0f0f0;
+    --bg-msg-me: #dcf8c6;
+    --bg-hover: #e6e6e8;
+    --bg-card: #ffffff;
+    --border: #dcdcdc;
+    --text: #000000;
+    --text-dim: #7a7a7a;
+    --accent: #3390ec;
+    --accent-hover: #5aa5f0;
+    --stars: #e0a800;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Segoe UI', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    height: 100vh;
+    display: flex;
+    overflow: hidden;
+    transition: background 0.3s, color 0.3s;
+  }
+
+  /* ============ САЙДБАР ============ */
+  .sidebar {
+    width: 320px;
+    background: var(--bg-side);
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+  .sidebar-header {
+    padding: 10px 12px;
+    background: var(--bg);
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 6px;
+  }
+  .sidebar-header h2 { font-size: 13px; flex: 1; }
+  .theme-btn, .mini-btn {
+    background: var(--bg-input);
+    border: none;
+    color: var(--text);
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    cursor: pointer;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .theme-btn:hover, .mini-btn:hover { background: var(--bg-hover); }
+
+  .search-bar {
+    padding: 8px 12px;
+    background: var(--bg);
+    border-bottom: 1px solid var(--border);
+  }
+  .search-bar input {
+    width: 100%;
+    padding: 8px 12px;
+    border: none;
+    border-radius: 20px;
+    background: var(--bg-input);
+    color: var(--text);
+    font-size: 13px;
+    outline: none;
+  }
+
+  #chatList { flex: 1; overflow-y: auto; }
+
+  .chat-item {
+    padding: 10px 12px;
+    cursor: pointer;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    position: relative;
+    transition: background 0.15s;
+  }
+  .chat-item:hover { background: var(--bg-hover); }
+  .chat-item.active { background: var(--accent); color: #fff; }
+  .chat-item.active .last { color: #dbe9f7; }
+  .chat-item.pinned::before {
+    content: "📌"; position: absolute; top: 4px; right: 4px; font-size: 10px;
+  }
+
+  .avatar {
+    width: 44px; height: 44px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 600; font-size: 15px; color: #fff;
+    flex-shrink: 0; background-size: cover; background-position: center;
+    overflow: hidden; user-select: none; position: relative;
+  }
+  .avatar.small { width: 28px; height: 28px; font-size: 12px; }
+  .avatar.tiny { width: 20px; height: 20px; font-size: 10px; }
+  .avatar.premium {
+    background: var(--bread) !important;
+    animation: breadPulse 3s infinite;
+  }
+  .avatar.bread-plus {
+    background: var(--bread-plus) !important;
+    animation: breadPlusPulse 2s infinite;
+  }
+  @keyframes breadPulse {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(245,197,66,0.7); }
+    50% { box-shadow: 0 0 0 8px rgba(245,197,66,0); }
+  }
+  @keyframes breadPlusPulse {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(255,140,0,0.8), 0 0 15px rgba(255,215,0,0.6); }
+    50% { box-shadow: 0 0 0 10px rgba(255,140,0,0), 0 0 25px rgba(255,215,0,0.9); }
+  }
+
+  .chat-item .meta { flex: 1; min-width: 0; }
+  .chat-item .name {
+    font-weight: 600; font-size: 14px;
+    display: flex; align-items: center; gap: 4px;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .chat-item .last {
+    font-size: 12px; color: var(--text-dim); margin-top: 2px;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+
+  /* ============ ОСНОВНАЯ ЧАСТЬ ============ */
+  .main { flex: 1; display: flex; flex-direction: column; }
+  .header {
+    padding: 10px 15px; background: var(--bg);
+    border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; gap: 10px;
+  }
+  .header .title { font-weight: 600; font-size: 15px; }
+  .header .status { font-size: 12px; color: var(--text-dim); }
+  .header .actions { margin-left: auto; display: flex; gap: 6px; }
+
+  .messages {
+    flex: 1; overflow-y: auto; padding: 15px;
+    display: flex; flex-direction: column; gap: 8px;
+  }
+  .msg {
+    max-width: 70%; padding: 8px 12px; border-radius: 12px;
+    font-size: 14px; word-wrap: break-word;
+    animation: pop 0.2s ease-out; position: relative;
+  }
+  @keyframes pop {
+    from { transform: scale(0.85); opacity: 0; }
+    to { transform: scale(1); opacity: 1; }
+  }
+  .msg.me { align-self: flex-end; background: var(--bg-msg-me); color: var(--text); }
+  .msg.bot { align-self: flex-start; background: var(--bg-msg-bot); color: var(--text); }
+  body.light .msg.me { color: #000; }
+  .msg .author {
+    font-size: 11px; color: var(--text-dim);
+    margin-bottom: 3px; display: flex; align-items: center; gap: 5px; font-weight: 600;
+  }
+  .msg .reply-quote {
+    background: rgba(0,0,0,0.2); border-left: 2px solid var(--accent);
+    padding: 4px 8px; border-radius: 4px; font-size: 12px;
+    color: var(--text-dim); margin-bottom: 5px;
+  }
+  .msg img.attached {
+    max-width: 100%; border-radius: 8px; margin-top: 5px;
+    cursor: pointer; display: block;
+  }
+  .msg .gift-attached {
+    font-size: 60px; text-align: center; padding: 8px;
+    animation: giftPop 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+    display: inline-block;
+  }
+  @keyframes giftPop {
+    0% { transform: scale(0) rotate(-180deg); }
+    100% { transform: scale(1) rotate(0); }
+  }
+
+  .msg-actions {
+    position: absolute; top: -8px; right: 8px;
+    display: none; gap: 3px; background: var(--bg-card);
+    border: 1px solid var(--border); border-radius: 8px; padding: 2px;
+  }
+  .msg:hover .msg-actions { display: flex; }
+  .msg-actions button {
+    background: transparent; border: none; cursor: pointer;
+    font-size: 13px; padding: 2px 5px; border-radius: 4px; color: var(--text);
+  }
+  .msg-actions button:hover { background: var(--bg-hover); }
+
+  /* ============ ИНПУТ ============ */
+  .input-bar {
+    display: flex; padding: 10px; background: var(--bg);
+    border-top: 1px solid var(--border); gap: 6px; align-items: center;
+  }
+  .input-bar input[type="text"] {
+    flex: 1; padding: 10px 12px; border: none;
+    border-radius: 8px; background: var(--bg-input);
+    color: var(--text); font-size: 14px; outline: none;
+  }
+  .input-bar button, .icon-btn {
+    padding: 10px 14px; background: var(--accent);
+    border: none; border-radius: 8px; color: #fff;
+    cursor: pointer; font-weight: 600; font-size: 16px;
+  }
+  .input-bar button:hover { background: var(--accent-hover); }
+  .icon-btn { background: var(--bg-input); color: var(--text); padding: 10px 12px; }
+  .icon-btn:hover { background: var(--bg-hover); }
+
+  /* ============ ПРОФИЛЬ ============ */
+  .profile {
+    padding: 8px 12px; background: var(--bg);
+    border-bottom: 1px solid var(--border);
+    font-size: 13px; display: flex;
+    align-items: center; gap: 10px; flex-wrap: wrap;
+  }
+  .profile .stars { color: var(--stars); font-weight: 600; }
+  .profile .actions { margin-left: auto; display: flex; gap: 4px; flex-wrap: wrap; }
+  .pill-btn {
+    padding: 4px 9px; background: var(--bg-input);
+    color: var(--text); border: none; border-radius: 14px;
+    cursor: pointer; font-size: 12px; transition: background 0.15s;
+  }
+  .pill-btn:hover { background: var(--accent); color: #fff; }
+  .pill-btn.primary { background: var(--accent); color: #fff; }
+  .pill-btn.primary:hover { background: var(--accent-hover); }
+  .pill-btn.ad {
+    background: linear-gradient(135deg, #f5c542, #e17076);
+    color: #fff; font-weight: 700;
+  }
+  .pill-btn.bread {
+    background: var(--bread); color: #fff;
+    font-weight: 700; text-shadow: 0 1px 2px rgba(0,0,0,0.3);
+  }
+  .pill-btn.bread-plus {
+    background: var(--bread-plus); color: #fff;
+    font-weight: 700; text-shadow: 0 1px 3px rgba(0,0,0,0.4);
+    animation: breadPlusPulse 2s infinite;
+  }
+  .pill-btn.secret {
+    background: linear-gradient(135deg, #a695e7, #6a5acd);
+    color: #fff; font-weight: 700;
+  }
+  .pill-btn.logout {
+    background: #e17076;
+    color: #fff;
+    font-weight: 700;
+  }
+  .pill-btn.logout:hover { background: #c95a60; }
+
+  .bread-badge {
+    display: inline-block; background: var(--bread); color: #fff;
+    font-size: 10px; padding: 1px 6px; border-radius: 8px;
+    font-weight: 700; vertical-align: middle; margin-left: 4px;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.3);
+  }
+  .bread-plus-badge {
+    display: inline-block; background: var(--bread-plus); color: #fff;
+    font-size: 10px; padding: 1px 6px; border-radius: 8px;
+    font-weight: 700; vertical-align: middle; margin-left: 4px;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.4);
+  }
+  .secret-badge {
+    display: inline-block; background: linear-gradient(135deg, #a695e7, #6a5acd);
+    color: #fff; font-size: 10px; padding: 1px 6px;
+    border-radius: 8px; font-weight: 700;
+    vertical-align: middle; margin-left: 4px;
+  }
+
+  /* ============ МОДАЛКИ ============ */
+  .modal {
+    display: none; position: fixed; inset: 0;
+    background: rgba(0,0,0,0.6); justify-content: center;
+    align-items: center; z-index: 100;
+  }
+  .modal.open { display: flex; }
+  .modal-content {
+    background: var(--bg); color: var(--text);
+    padding: 20px; border-radius: 12px;
+    width: 460px; max-width: 95vw; max-height: 85vh; overflow-y: auto;
+  }
+  .modal-content h3 { margin-bottom: 12px; font-size: 16px; }
+  .close-btn {
+    margin-top: 10px; width: 100%; padding: 8px;
+    background: var(--accent); border: none;
+    border-radius: 8px; color: #fff; cursor: pointer;
+  }
+
+  /* Сетка подарков */
+  .gift-grid {
+    display: grid; grid-template-columns: repeat(5, 1fr);
+    gap: 6px; margin-bottom: 10px;
+  }
+  .gift-cell {
+    background: var(--bg-input); padding: 8px 4px;
+    border-radius: 8px; cursor: pointer; text-align: center;
+    transition: transform 0.15s, background 0.15s;
+    position: relative; overflow: hidden;
+  }
+  .gift-cell:hover {
+    transform: scale(1.08); background: var(--accent); color: #fff;
+  }
+  .gift-cell .emoji { font-size: 26px; display: block; line-height: 1; }
+  .gift-cell .price {
+    font-size: 10px; color: var(--stars);
+    margin-top: 3px; font-weight: 600;
+  }
+  .gift-cell:hover .price { color: #fff; }
+  .gift-cell.limited {
+    border: 2px solid #e17076;
+    background: linear-gradient(135deg, rgba(225,112,118,0.2), rgba(245,197,66,0.1));
+  }
+  .gift-cell.limited::after {
+    content: "LIM"; position: absolute; top: 2px; left: 2px;
+    background: #e17076; color: #fff; font-size: 8px;
+    padding: 1px 4px; border-radius: 4px; font-weight: 700;
+  }
+  .gift-cell.owned::before {
+    content: "✓"; position: absolute; top: 2px; right: 4px;
+    color: #7bc862; font-weight: bold; font-size: 14px;
+  }
+
+  .gift-tabs {
+    display: flex; gap: 4px; margin-bottom: 12px; flex-wrap: wrap;
+  }
+  .gift-tab {
+    padding: 5px 10px; background: var(--bg-input);
+    border-radius: 14px; font-size: 11px; cursor: pointer;
+  }
+  .gift-tab.active { background: var(--accent); color: #fff; font-weight: 600; }
+  .gift-tab:hover { background: var(--accent); color: #fff; }
+
+  /* Карточки подписок */
+  .bread-card {
+    background: var(--bread); border-radius: 16px;
+    padding: 24px; text-align: center; color: #fff;
+    margin-bottom: 15px; box-shadow: 0 8px 24px rgba(212,162,78,0.4);
+    position: relative; overflow: hidden;
+  }
+  .bread-card.plus {
+    background: var(--bread-plus);
+    box-shadow: 0 8px 30px rgba(255,140,0,0.6);
+  }
+  .bread-card::before {
+    content: "🍞"; position: absolute; font-size: 200px;
+    opacity: 0.08; top: -40px; right: -40px; transform: rotate(-15deg);
+  }
+  .bread-card h2 {
+    font-size: 26px; margin-bottom: 8px;
+    text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+  }
+  .bread-card .subtitle {
+    font-size: 13px; opacity: 0.95; margin-bottom: 14px; font-weight: 500;
+  }
+  .bread-card .bread-icon {
+    font-size: 80px; display: block; margin-bottom: 10px;
+    animation: breadBounce 2s infinite;
+  }
+  @keyframes breadBounce {
+    0%, 100% { transform: translateY(0) rotate(-5deg); }
+    50% { transform: translateY(-10px) rotate(5deg); }
+  }
+  .bread-card .buy-btn {
+    margin-top: 15px; padding: 12px 32px; background: #fff;
+    color: #8b5a2b; border: none; border-radius: 24px;
+    font-weight: 800; cursor: pointer; font-size: 15px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+    transition: transform 0.15s;
+  }
+  .bread-card .buy-btn:hover { transform: scale(1.05); }
+  .bread-card .buy-btn:disabled { opacity: 0.55; cursor: not-allowed; }
+  .bread-card.plus .buy-btn { color: #b8420a; }
+
+  .bread-perks { font-size: 13px; line-height: 1.8; color: var(--text-dim); }
+  .bread-perks b { color: var(--text); }
+
+  /* Инвентарь */
+  .inv-grid {
+    display: grid; grid-template-columns: repeat(6, 1fr); gap: 6px;
+  }
+  .inv-cell {
+    background: var(--bg-input); padding: 8px 4px;
+    border-radius: 8px; text-align: center; position: relative;
+  }
+  .inv-cell .emoji { font-size: 26px; display: block; line-height: 1; }
+  .inv-cell .count {
+    position: absolute; bottom: 2px; right: 4px;
+    background: var(--accent); color: #fff; border-radius: 8px;
+    padding: 0 5px; font-size: 10px; font-weight: 600;
+  }
+  .inv-cell.limited { border: 2px solid #e17076; }
+
+  /* Анимации подарков */
+  .floating-gift {
+    position: fixed; font-size: 80px; pointer-events: none;
+    z-index: 200; animation: flyUp 2.5s ease-out forwards;
+  }
+  @keyframes flyUp {
+    0% { opacity: 0; transform: translateY(0) scale(0.3); }
+    20% { opacity: 1; transform: translateY(-50px) scale(1.2); }
+    100% { opacity: 0; transform: translateY(-300px) scale(1); }
+  }
+  .gift-overlay {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.75);
+    display: flex; justify-content: center; align-items: center;
+    z-index: 300; animation: fadeIn 0.3s;
+  }
+  @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+  .gift-card {
+    background: linear-gradient(135deg, #2b5278, #17212b);
+    padding: 40px 60px; border-radius: 20px;
+    text-align: center; color: #fff;
+    animation: cardPop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+  .gift-card.limited-card {
+    background: linear-gradient(135deg, #e17076, #8b5a2b, #f5c542);
+  }
+  .gift-card.premium-card-gift { background: var(--bread); }
+  .gift-card.plus-card-gift { background: var(--bread-plus); }
+  .gift-card.secret-card {
+    background: linear-gradient(135deg, #a695e7, #6a5acd, #17212b);
+  }
+  @keyframes cardPop {
+    0% { transform: scale(0); }
+    100% { transform: scale(1); }
+  }
+  .gift-card .emoji {
+    font-size: 100px; animation: bounce 1s infinite; display: inline-block;
+  }
+  @keyframes bounce {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-15px); }
+  }
+  .gift-card .title { font-size: 22px; font-weight: bold; margin-top: 15px; }
+  .gift-card .sub { color: rgba(255,255,255,0.9); font-size: 14px; margin-top: 5px; }
+
+  .bot-badge {
+    display: inline-block; background: var(--accent); color: #fff;
+    font-size: 10px; padding: 1px 6px; border-radius: 8px;
+    vertical-align: middle;
+  }
+  .group-badge { background: #7bc862; }
+  .custom-badge { background: #a695e7; }
+
+  .img-viewer {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.9);
+    display: flex; justify-content: center; align-items: center;
+    z-index: 400; cursor: zoom-out;
+  }
+  .img-viewer img { max-width: 90%; max-height: 90%; border-radius: 8px; }
+
+  .toast {
+    position: fixed; top: 20px; right: 20px;
+    background: var(--bg-card); color: var(--text);
+    padding: 12px 20px; border-radius: 10px;
+    border-left: 4px solid var(--accent);
+    z-index: 500; animation: slideIn 0.3s ease-out;
+    font-size: 14px; box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+    max-width: 320px;
+  }
+  .toast.bread-toast { border-left-color: #d4a24e; background: var(--bread); color: #fff; }
+  .toast.plus-toast { border-left-color: #ff8c00; background: var(--bread-plus); color: #fff; font-weight: 600; }
+  @keyframes slideIn {
+    from { transform: translateX(400px); opacity: 0; }
+    to { transform: translateX(0); opacity: 1; }
+  }
+
+  .stats-grid {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 10px;
+  }
+  .stat-box {
+    background: var(--bg-input); padding: 12px;
+    border-radius: 8px; text-align: center;
+  }
+  .stat-box .value { font-size: 22px; font-weight: bold; color: var(--accent); }
+  .stat-box .label { font-size: 11px; color: var(--text-dim); margin-top: 4px; }
+
+  .empty-note {
+    text-align: center; color: var(--text-dim);
+    font-size: 13px; padding: 20px;
+  }
+
+  /* ============ КОНСТРУКТОР БОТОВ ============ */
+  .form-group { margin-bottom: 12px; }
+  .form-group label {
+    display: block; font-size: 12px; color: var(--text-dim);
+    margin-bottom: 5px; font-weight: 600;
+  }
+  .form-group input[type="text"],
+  .form-group input[type="number"],
+  .form-group textarea,
+  .form-group select {
+    width: 100%; padding: 9px 12px;
+    border: 1px solid var(--border); border-radius: 8px;
+    background: var(--bg-input); color: var(--text);
+    font-size: 13px; font-family: inherit; outline: none;
+  }
+  .form-group input:focus,
+  .form-group textarea:focus,
+  .form-group select:focus { border-color: var(--accent); }
+  .form-group textarea { resize: vertical; min-height: 70px; }
+  .form-hint {
+    font-size: 11px; color: var(--text-dim);
+    margin-top: 4px; line-height: 1.5;
+  }
+
+  .emoji-picker {
+    display: flex; flex-wrap: wrap; gap: 4px;
+    margin-top: 6px; padding: 8px;
+    background: var(--bg-input); border-radius: 8px;
+    max-height: 100px; overflow-y: auto;
+  }
+  .emoji-pick {
+    font-size: 20px; cursor: pointer;
+    padding: 3px 5px; border-radius: 6px;
+    transition: background 0.15s, transform 0.15s;
+  }
+  .emoji-pick:hover { background: var(--accent); transform: scale(1.2); }
+  .emoji-pick.selected { background: var(--accent); }
+
+  .rules-list {
+    background: var(--bg-input); border-radius: 8px;
+    padding: 10px; margin-bottom: 10px;
+    max-height: 180px; overflow-y: auto;
+  }
+  .rule-item {
+    display: flex; gap: 6px; align-items: center;
+    margin-bottom: 6px; padding: 6px 8px;
+    background: var(--bg-card); border-radius: 6px; font-size: 12px;
+  }
+  .rule-item .rule-key {
+    flex: 0 0 30%; color: var(--accent); font-weight: 600;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  .rule-item .rule-val {
+    flex: 1; color: var(--text);
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  .rule-item .rule-del {
+    background: transparent; border: none;
+    color: #e17076; cursor: pointer;
+    font-size: 14px; padding: 2px 5px;
+  }
+  .rule-item .rule-del:hover {
+    background: rgba(225,112,118,0.2); border-radius: 4px;
+  }
+
+  .bot-preview {
+    background: var(--bg-input); border-radius: 10px;
+    padding: 12px; margin-bottom: 12px;
+    display: flex; align-items: center; gap: 10px;
+  }
+  .bot-preview .avatar { width: 50px; height: 50px; font-size: 24px; }
+  .bot-preview .info { flex: 1; min-width: 0; }
+  .bot-preview .info .bname { font-weight: 700; font-size: 14px; margin-bottom: 3px; }
+  .bot-preview .info .bdesc {
+    font-size: 11px; color: var(--text-dim);
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+
+  .btn-row { display: flex; gap: 8px; margin-top: 10px; }
+  .btn-row button {
+    flex: 1; padding: 10px; border: none;
+    border-radius: 8px; cursor: pointer;
+    font-weight: 600; font-size: 13px;
+  }
+  .btn-primary { background: var(--accent); color: #fff; }
+  .btn-primary:hover { opacity: 0.9; }
+  .btn-secondary { background: var(--bg-input); color: var(--text); }
+  .btn-secondary:hover { background: var(--bg-hover); }
+  .btn-danger { background: #e17076; color: #fff; }
+  .btn-danger:hover { opacity: 0.9; }
+
+  .list-option {
+    padding: 10px; background: var(--bg-input);
+    border-radius: 8px; margin-bottom: 8px;
+    cursor: pointer;
+  }
+  .list-option:hover { background: var(--accent); color: #fff; }
+
+  /* ============ РЕКЛАМА ============ */
+  .ad-item {
+    display: flex; gap: 12px; align-items: center;
+    padding: 12px; background: var(--bg-input);
+    border-radius: 10px; margin-bottom: 8px;
+    cursor: pointer; transition: transform 0.15s, background 0.15s;
+  }
+  .ad-item:hover {
+    transform: translateX(4px);
+    background: var(--accent); color: #fff;
+  }
+  .ad-item:hover .ad-reward { color: #fff; }
+  .ad-item .ad-preview {
+    width: 60px; height: 60px; border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 32px; flex-shrink: 0;
+  }
+  .ad-item .ad-info { flex: 1; min-width: 0; }
+  .ad-item .ad-name { font-weight: 700; font-size: 14px; margin-bottom: 3px; }
+  .ad-item .ad-desc {
+    font-size: 12px; color: var(--text-dim);
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  .ad-item:hover .ad-desc { color: #dbe9f7; }
+  .ad-item .ad-reward {
+    font-weight: 700; color: var(--stars);
+    font-size: 13px; flex-shrink: 0;
+  }
+  .ad-item.custom-ad { border: 2px solid #a695e7; }
+
+  .ad-screen {
+    width: 100%; padding: 50px 30px; border-radius: 16px;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    animation: adFadeIn 0.5s; color: #fff;
+    text-shadow: 0 2px 4px rgba(0,0,0,0.4);
+    min-height: 200px;
+  }
+  @keyframes adFadeIn {
+    from { opacity: 0; transform: scale(0.9); }
+    to { opacity: 1; transform: scale(1); }
+  }
+  .ad-screen .ad-big-emoji {
+    font-size: 90px; animation: adBounce 1s infinite; margin-bottom: 15px;
+  }
+  @keyframes adBounce {
+    0%, 100% { transform: translateY(0) rotate(-5deg); }
+    50% { transform: translateY(-12px) rotate(5deg); }
+  }
+  .ad-screen .ad-big-title {
+    font-size: 24px; font-weight: 800;
+    margin-bottom: 10px; text-align: center;
+  }
+  .ad-screen .ad-big-text {
+    font-size: 15px; opacity: 0.95;
+    text-align: center; max-width: 90%; line-height: 1.5;
+  }
+
+  .ad-style-sunset  { background: linear-gradient(135deg, #ff7e5f, #feb47b); }
+  .ad-style-ocean   { background: linear-gradient(135deg, #2b5876, #4e4376); }
+  .ad-style-forest  { background: linear-gradient(135deg, #134e5e, #71b280); }
+  .ad-style-gold    { background: linear-gradient(135deg, #f5c542, #b8860b, #ffd700); }
+  .ad-style-neon    { background: linear-gradient(135deg, #a695e7, #6a5acd, #e17076); }
+  .ad-style-fire    { background: linear-gradient(135deg, #ff0000, #ff8c00, #ffd700); }
+  .ad-style-ice     { background: linear-gradient(135deg, #83a4d4, #b6fbff); }
+  .ad-style-candy   { background: linear-gradient(135deg, #ff9a9e, #fad0c4, #fbc2eb); }
+  .ad-style-space   { background: linear-gradient(135deg, #0f0c29, #302b63, #24243e); }
+  .ad-style-bread   { background: linear-gradient(135deg, #d4a24e, #8b5a2b, #f5c542); }
+
+  .ad-toast {
+    position: fixed; bottom: 30px; left: 50%;
+    transform: translateX(-50%);
+    background: var(--stars); color: #000;
+    padding: 14px 28px; border-radius: 30px;
+    font-weight: 800; font-size: 16px; z-index: 600;
+    animation: adRewardPop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+    box-shadow: 0 6px 20px rgba(245,197,66,0.5);
+  }
+  @keyframes adRewardPop {
+    0% { transform: translate(-50%, 100px) scale(0.5); opacity: 0; }
+    100% { transform: translate(-50%, 0) scale(1); opacity: 1; }
+  }
+</style>
+</head>
+<body>
+
+<div class="sidebar">
+  <div class="sidebar-header">
+    <h2>🍞 Notebook Telegram</h2>
+    <button class="theme-btn" onclick="toggleTheme()" title="Тема">🌙</button>
+  </div>
+  <div class="search-bar">
+    <input type="text" id="searchInput" placeholder="🔍 Поиск..." oninput="renderChats()" />
+  </div>
+  <div id="chatList"></div>
+</div>
+
+<div class="main">
+  <div class="profile" id="profile"></div>
+  <div class="header" id="chatHeader">
+    <div class="avatar small" id="chatAvatar"></div>
+    <div>
+      <div class="title" id="chatTitle">Выберите чат</div>
+      <div class="status" id="chatStatus"></div>
+    </div>
+    <div class="actions" id="chatActions"></div>
+  </div>
+  <div class="messages" id="messages"></div>
+  <div class="input-bar" id="inputBar">
+    <button class="icon-btn" onclick="document.getElementById('imgInput').click()" title="Картинка">📎</button>
+    <input type="file" id="imgInput" accept="image/*" style="display:none" onchange="sendImage(event)">
+    <input type="text" id="msgInput" placeholder="Написать сообщение..." />
+    <button onclick="sendMessage()">➤</button>
+  </div>
+</div>
+
+<!-- Модалка подарков -->
+<div class="modal" id="giftModal">
+  <div class="modal-content">
+    <h3>🎁 Магазин подарков</h3>
+    <div class="gift-tabs" id="giftTabs"></div>
+    <div class="gift-grid" id="giftGrid"></div>
+    <button class="close-btn" onclick="closeModal('giftModal')">Закрыть</button>
+  </div>
+</div>
+
+<!-- Модалка подписок -->
+<div class="modal" id="breadModal">
+  <div class="modal-content">
+    <h3>🍞 Подписки</h3>
+    <div class="bread-card" id="breadCard"></div>
+    <div class="bread-perks" id="breadPerks"></div>
+    <div class="bread-card plus" id="breadPlusCard" style="margin-top:15px"></div>
+    <div class="bread-perks" id="breadPlusPerks"></div>
+    <button class="close-btn" onclick="closeModal('breadModal')">Закрыть</button>
+  </div>
+</div>
+
+<!-- Модалка инвентаря -->
+<div class="modal" id="invModal">
+  <div class="modal-content">
+    <h3>🎒 Мой инвентарь</h3>
+    <div class="inv-grid" id="invGrid"></div>
+    <button class="close-btn" onclick="closeModal('invModal')">Закрыть</button>
+  </div>
+</div>
+
+<!-- Модалка статистики -->
+<div class="modal" id="statsModal">
+  <div class="modal-content">
+    <h3>📊 Статистика</h3>
+    <div class="stats-grid" id="statsGrid"></div>
+    <button class="close-btn" onclick="closeModal('statsModal')">Закрыть</button>
+  </div>
+</div>
+
+<!-- Модалка создания чата -->
+<div class="modal" id="newChatModal">
+  <div class="modal-content">
+    <h3>➕ Создать</h3>
+    <div class="list-option" onclick="createGroup()">👥 Группа</div>
+    <div class="list-option" onclick="openBotConstructor()">🤖 Свой бот (конструктор)</div>
+    <button class="close-btn" onclick="closeModal('newChatModal')">Закрыть</button>
+  </div>
+</div>
+
+<!-- Модалка конструктора ботов -->
+<div class="modal" id="botConstructorModal">
+  <div class="modal-content">
+    <h3 id="botConstructorTitle">🤖 Конструктор ботов</h3>
+    <div class="bot-preview" id="botPreview"></div>
+
+    <div class="form-group">
+      <label>Имя бота</label>
+      <input type="text" id="botNameInput" placeholder="Например: 🎲 Кубик-бот" maxlength="40" oninput="updateBotPreview()" />
+    </div>
+
+    <div class="form-group">
+      <label>Аватар (эмодзи)</label>
+      <div class="emoji-picker" id="botEmojiPicker"></div>
+    </div>
+
+    <div class="form-group">
+      <label>Описание / статус</label>
+      <input type="text" id="botDescInput" placeholder="Кидаю кубики и отвечаю на всё" maxlength="80" oninput="updateBotPreview()" />
+    </div>
+
+    <div class="form-group">
+      <label>Приветствие (при первом сообщении)</label>
+      <textarea id="botGreetingInput" placeholder="Привет! Я твой новый бот. Напиши что-нибудь!"></textarea>
+    </div>
+
+    <div class="form-group">
+      <label>Ответ по умолчанию</label>
+      <textarea id="botDefaultInput" placeholder="🤖 Интересно! Расскажи ещё."></textarea>
+    </div>
+
+    <div class="form-group">
+      <label>Правила (ключевое слово → ответ)</label>
+      <div class="rules-list" id="rulesList"></div>
+      <div style="display:flex;gap:6px">
+        <input type="text" id="ruleKeyInput" placeholder="Ключ (например: привет)" style="flex:1;padding:8px;border-radius:6px;border:1px solid var(--border);background:var(--bg-input);color:var(--text);font-size:12px" />
+        <input type="text" id="ruleValInput" placeholder="Ответ" style="flex:2;padding:8px;border-radius:6px;border:1px solid var(--border);background:var(--bg-input);color:var(--text);font-size:12px" />
+        <button class="btn-primary" style="padding:8px 12px;border:none;border-radius:6px;cursor:pointer" onclick="addRule()">+</button>
+      </div>
+    </div>
+
+    <div class="btn-row">
+      <button class="btn-secondary" onclick="closeModal('botConstructorModal')">Отмена</button>
+      <button class="btn-primary" onclick="saveBot()">💾 Сохранить бота</button>
+    </div>
+    <button class="btn-danger" style="margin-top:8px;width:100%;padding:10px;border:none;border-radius:8px;cursor:pointer;display:none" id="deleteBotBtn" onclick="deleteCurrentBot()">🗑 Удалить бота</button>
+  </div>
+</div>
+
+<!-- Модалка рекламы -->
+<div class="modal" id="adModal">
+  <div class="modal-content" style="width:520px">
+    <h3>📺 Реклама — смотри и зарабатывай</h3>
+    <div id="adCooldown" style="display:none;text-align:center;padding:20px;color:var(--text-dim)">
+      ⏱ Подождите <b id="adCooldownTimer">0:00</b> до следующего просмотра
+    </div>
+    <div id="adList"></div>
+    <div style="margin-top:12px;padding-top:12px;border-top:1px solid var(--border)">
+      <button class="btn-primary" style="width:100%;padding:10px;border:none;border-radius:8px;cursor:pointer" onclick="openAdConstructor()">
+        ✏️ Создать свою рекламу
+      </button>
+    </div>
+    <button class="close-btn" onclick="closeModal('adModal')">Закрыть</button>
+  </div>
+</div>
+
+<!-- Модалка просмотра рекламы -->
+<div class="modal" id="adPlayModal">
+  <div class="modal-content" style="width:520px;text-align:center">
+    <div id="adPlayer"></div>
+    <div id="adTimerBox" style="margin-top:15px;font-size:14px;color:var(--text-dim)">
+      Осталось: <b id="adTimerValue">5</b> сек
+    </div>
+    <button class="close-btn" id="adCloseBtn" style="opacity:0.5;cursor:not-allowed" onclick="closeAdPlay()" disabled>
+      Закрыть
+    </button>
+  </div>
+</div>
+
+<!-- Модалка создания рекламы -->
+<div class="modal" id="adConstructorModal">
+  <div class="modal-content">
+    <h3>✏️ Своя реклама</h3>
+    <div class="form-group">
+      <label>Заголовок</label>
+      <input type="text" id="adTitleInput" placeholder="Например: 🍞 Хлеб — сила!" maxlength="60" />
+    </div>
+    <div class="form-group">
+      <label>Основной текст</label>
+      <textarea id="adTextInput" placeholder="Купите хлеб — и будете счастливы!" maxlength="200"></textarea>
+    </div>
+    <div class="form-group">
+      <label>Большое эмодзи (кликните)</label>
+      <div class="emoji-picker" id="adEmojiPicker"></div>
+    </div>
+    <div class="form-group">
+      <label>Стиль фона</label>
+      <select id="adStyleInput">
+        <option value="sunset">🌅 Закат</option>
+        <option value="ocean">🌊 Океан</option>
+        <option value="forest">🌲 Лес</option>
+        <option value="gold">✨ Золото</option>
+        <option value="neon">💜 Неон</option>
+        <option value="fire">🔥 Огонь</option>
+        <option value="ice">❄️ Лёд</option>
+        <option value="candy">🍬 Конфета</option>
+        <option value="space">🌌 Космос</option>
+        <option value="bread">🍞 Хлеб</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label>Длительность, сек</label>
+      <input type="number" id="adDurationInput" value="5" min="3" max="15" />
+    </div>
+    <div class="btn-row">
+      <button class="btn-secondary" onclick="closeModal('adConstructorModal')">Отмена</button>
+      <button class="btn-primary" onclick="saveCustomAd()">💾 Сохранить рекламу</button>
+    </div>
+    <div id="adConstructorActions" style="margin-top:8px"></div>
+  </div>
+</div>
+
+<input type="file" id="avatarInput" accept="image/*" style="display:none" onchange="changeAvatar(event)">
+
+<script>
+// =================================================================
+// ============ 200 ПОДАРКОВ + 20 ЛИМИТИРОВАННЫХ ==================
+// =================================================================
+const EMOJI_POOLS = {
+  animal: ["🐶","🐱","🐭","🐹","🐰","🦊","🐻","🐼","🐨","🐯","🦁","🐮","🐷","🐸","🐵","🐔","🐧","🐦","🐤","🦆","🦅","🦉","🦇","🐺","🐗","🐴","🦄","🐝","🐛","🦋","🐌","🐞","🐜","🦗","🕷","🐢","🐍","🦎","🐙","🦑","🦐","🦞","🦀","🐡","🐠","🐟","🐬","🐳","🐋","🦈","🐊","🐅","🐆","🦓","🦍","🐘","🦛","🦏","🐪","🐫","🦒","🦘","🐄","🐎","🐖","🐏","🐑","🦌","🐕","🐈","🐓","🦃","🦚","🦜","🦢","🦩","🕊","🐇","🦝","🦔"],
+  food:   ["🍎","🍐","🍊","🍋","🍌","🍉","🍇","🍓","🍈","🍒","🍑","🥭","🍍","🥥","🥝","🍅","🍆","🥑","🥦","🥬","🥒","🌶","🌽","🥕","🧄","🧅","🥔","🍠","🥐","🥯","🍞","🥖","🥨","🧀","🥚","🍳","🥞","🥓","🥩","🍗","🍖","🌭","🍔","🍟","🍕","🥪","🥙","🌮","🌯","🥗","🍝","🍜","🍲","🍛","🍣","🍱","🥟","🍤","🍙","🍚","🍘","🍢","🍡","🍧","🍨","🍦","🥧","🧁","🍰","🎂","🍮","🍭","🍬","🍫","🍿","🍩","🍪","🌰","🥜","🍯","🥛","☕","🍵","🧃","🥤","🍺","🍻","🥂","🍷","🥃","🍸","🍹"],
+  object: ["⌚","📱","💻","⌨","🖥","🖨","🖱","💾","💿","📷","📸","📹","🎥","📞","☎","📠","📺","📻","🎙","⏰","⏱","⏲","🕰","⌛","⏳","📡","🔋","🔌","💡","🔦","🕯","🧯","🛢","💸","💵","💴","💶","💷","💰","💳","💎","⚖","🔧","🔨","⚒","🛠","⛏","🔩","⚙","🧱","⛓","🧲","🔫","💣","🧨","🔪","🗡","⚔","🛡","🚬","⚰","⚱","🏺","🔮","📿","🧿","💈","⚗","🔭","🔬","🕳","💊","💉","🩸","🩹","🩺","🌡","🧬","🦠","🧫","🧪","🧹","🧺","🧻","🚽","🚰","🚿","🛁","🛀","🧼","🪒","🧽","🧴"],
+  symbol: ["❤️","🧡","💛","💚","💙","💜","🖤","🤍","🤎","💔","❣","💕","💞","💓","💗","💖","💘","💝","💟","☮","✝","☪","🕉","☸","✡","🔯","🕎","☯","☦","🛐","⛎","♈","♉","♊","♋","♌","♍","♎","♏","♐","♑","♒","♓","🆔","⚛","🉑","☢","☣","📴","📳","🈶","🈚","🈸","🈺","🈷","✴","🆚","💮","🉐","㊙","㊗","🈴","🈵","🈹","🈲","🅰","🅱","🆎","🆑","🅾","🆘","❌","⭕","🛑","⛔","📛","🚫","💯","💢","♨","🚷","🚯","🚳","🚱","🔞","📵","🚭","❗","❕","❓","❔","‼","⁉","🔅","🔆","〽","⚠","🚸","🔱","⚜","🔰","♻","✅","🈯","💹","❇","✳","❎","🌐","💠","Ⓜ","🌀","💤","🏧","🚾","♿","🅿","🈳"],
+  nature: ["🌵","🎄","🌲","🌳","🌴","🌱","🌿","☘","🍀","🎍","🎋","🍃","🍂","🍁","🍄","🌾","💐","🌷","🌹","🥀","🌺","🌸","🌼","🌻","🌞","🌝","🌚","🌑","🌒","🌓","🌔","🌕","🌖","🌗","🌘","🌜","🌛","🌙","🌎","🌍","🌏","🪐","💫","⭐","🌟","✨","⚡","☄","💥","🔥","🌪","🌈","☀","🌤","⛅","🌥","☁","🌦","🌧","⛈","🌩","🌨","❄","☃","⛄","🌬","💨","💧","💦","☔","☂","🌊"]
+};
+
+const ADJ = ["Милое","Крутое","Яркое","Тёплое","Холодное","Сладкое","Редкое","Дикое","Спокойное","Смешное","Весёлое","Грустное","Сказочное","Космическое","Зимнее","Летнее","Весеннее","Осеннее","Золотое","Серебряное","Бронзовое","Алмазное","Огненное","Ледяное","Грозовое","Солнечное","Лунное","Звёздное","Ночное","Утреннее","Вечернее","Праздничное","Волшебное","Таинственное","Древнее","Будущее","Маленькое","Большое","Пушистое","Гладкое","Мягкое","Твёрдое","Быстрое","Медленное","Умное","Доброе","Хитрое","Верное","Смелое","Тихое"];
+const NOUNS = ["Сердце","Звезда","Мечта","Улыбка","Слеза","Искра","Огонь","Лёд","Ветер","Дождь","Снег","Гроза","Радуга","Заря","Закат","Рассвет","Тень","Свет","Тьма","Луч","Камень","Песок","Вода","Земля","Небо","Облако","Туман","Дым","Пепел","Пламя","Комета","Планета","Галактика","Космос","Время","Миг","Вечность","Судьба","Удача","Надежда","Вера","Любовь","Дружба","Тайна","Секрет","Загадка","Чудо","Магия","Сказка","Сон"];
+
+function priceForIndex(i) {
+  if (i < 50) return 1 + (i % 5);
+  if (i < 100) return 5 + (i % 15);
+  if (i < 150) return 20 + (i % 30);
+  return 50 + (i % 100);
+}
+function generateGifts() {
+  const gifts = [];
+  const cats = Object.keys(EMOJI_POOLS);
+  for (let i = 0; i < 200; i++) {
+    const cat = cats[i % cats.length];
+    const pool = EMOJI_POOLS[cat];
+    const emoji = pool[Math.floor(i / cats.length) % pool.length];
+    const adj = ADJ[(i * 3) % ADJ.length];
+    const noun = NOUNS[(i * 7) % NOUNS.length];
+    gifts.push({
+      id: "g" + i, emoji,
+      name: `${adj} ${noun}`,
+      category: cat,
+      price: priceForIndex(i),
+      limited: false
+    });
+  }
+  return gifts;
+}
+const LIMITED_VARIANTS = [
+  { name: "Золотой Хлеб",       color: "#f5c542", price: 500 },
+  { name: "Алмазный Хлеб",      color: "#7ee6ff", price: 750 },
+  { name: "Космический Хлеб",   color: "#a695e7", price: 600 },
+  { name: "Огненный Хлеб",      color: "#e17076", price: 550 },
+  { name: "Ледяной Хлеб",       color: "#65aadd", price: 550 },
+  { name: "Лесной Хлеб",        color: "#7bc862", price: 500 },
+  { name: "Ночной Хлеб",        color: "#2b5278", price: 650 },
+  { name: "Розовый Хлеб",       color: "#ee7aae", price: 520 },
+  { name: "Тыквенный Хлеб",     color: "#faa774", price: 480 },
+  { name: "Мятный Хлеб",        color: "#6ec9cb", price: 540 },
+  { name: "Багровый Хлеб",      color: "#8b2b3a", price: 700 },
+  { name: "Изумрудный Хлеб",    color: "#2ba36f", price: 720 },
+  { name: "Сапфировый Хлеб",    color: "#3a5fcd", price: 730 },
+  { name: "Аметистовый Хлеб",   color: "#9966cc", price: 740 },
+  { name: "Радужный Хлеб",      color: "rainbow", price: 900 },
+  { name: "Кристальный Хлеб",   color: "#e0f7ff", price: 800 },
+  { name: "Магмовый Хлеб",      color: "#ff4500", price: 850 },
+  { name: "Галактический Хлеб", color: "#4b0082", price: 950 },
+  { name: "Божественный Хлеб",  color: "#ffd700", price: 1200 },
+  { name: "Легендарный Хлеб",   color: "legendary", price: 1500 }
+];
+function generateLimitedGifts() {
+  return LIMITED_VARIANTS.map((v, i) => ({
+    id: "lim" + i, emoji: "🍞",
+    name: v.name, category: "limited",
+    price: v.price, limited: true, color: v.color
+  }));
+}
+const ALL_GIFTS = [...generateGifts(), ...generateLimitedGifts()];
+const GIFTS_BY_ID = Object.fromEntries(ALL_GIFTS.map(g => [g.id, g]));
+
+// =================================================================
+// ============ ВСТРОЕННЫЕ БОТЫ ===================================
+// =================================================================
+const BOT_NAMES = [
+  "🤖 Спам-бот",
+  "🌤 Погода-бот",
+  "😂 Шутник-бот",
+  "📚 Умник-бот",
+  "💡 Факт-бот",
+  "🧑‍💼 Ассистент",
+  "🍞 Хлеб-бот"
+];
+
+function botReply(botName, text) {
+  const chat = state.chats[botName];
+  if (chat && chat.customRules) {
+    const t = (text || "").toLowerCase().trim();
+    if (chat.customRules.length) {
+      for (const r of chat.customRules) {
+        if (t.includes(r.key.toLowerCase())) return r.val;
+      }
+    }
+    return chat.customDefault || "🤖 Интересно! Расскажи ещё.";
+  }
+
+  const t = (text || "").toLowerCase().trim();
+
+  if (botName === "🍞 Хлеб-бот") {
+    if (t.includes("премиум") || t.includes("хлеб")) return "🍞 Хлеб Премиум — 1000 ⭐, Хлеб+ — 2500 ⭐! Кнопка 🍞 в профиле.";
+    if (t.includes("подар")) return "🎁 200+ подарков и 20 лимитированных — кнопка 🎁.";
+    if (t.includes("бот")) return "🤖 Хочешь своего бота? Кнопка ➕ → «Свой бот».";
+    if (t.includes("реклам")) return "📺 Смотри рекламу — +400 ⭐ за просмотр! Кнопка 📺.";
+    if (t.includes("секрет") || t.includes("freetire")) return "🔮 Есть секретный аккаунт. Введи особое имя при входе...";
+    return "🍞 Я Хлеб-бот. Спроси про премиум, подарки, ботов или рекламу!";
+  }
+  if (botName === "🤖 Спам-бот") {
+    if (t.includes("привет")) return "Привет-привет! Я спам-бот 🤖";
+    if (t.includes("подар")) return "Подарки — кнопка 🎁 сверху!";
+    if (t.includes("реклам")) return "Реклама — кнопка 📺! +400 ⭐ за просмотр.";
+    return "🤖 Бип-буп. Напиши 'привет'.";
+  }
+  if (botName === "🌤 Погода-бот") {
+    const cities = ["Москва","Питер","Сочи","Казань","Новосибирск"];
+    const city = cities.find(c => t.includes(c.toLowerCase())) || "вашем городе";
+    const w = ["☀️ солнечно, +22°C","🌧 дождливо, +12°C","⛅ облачно, +18°C","❄️ снег, -5°C","🌪 ветрено, +15°C"];
+    return `🌤 Погода в ${city}: ${w[Math.floor(Math.random()*w.length)]}`;
+  }
+  if (botName === "😂 Шутник-бот") {
+    const jokes = [
+      "😄 Почему программисты не любят природу? Слишком много багов.",
+      "😄 Что сказал один байт другому? Ты мне не пара.",
+      "😄 Заходит Python в бар, а бармен: 'Вы уже заказали?' Python: 'Нет, я только импортирую.'",
+      "😄 Сколько программистов нужно, чтобы вкрутить лампочку? Ни одного, это аппаратная проблема.",
+      "😄 Программист ставит на ночь два стакана: один с водой — если захочет пить, второй пустой — если не захочет."
+    ];
+    return jokes[Math.floor(Math.random()*jokes.length)];
+  }
+  if (botName === "📚 Умник-бот") {
+    if (t.includes("2+2")) return "🧮 2 + 2 = 4";
+    if (t.includes("столица")) {
+      const caps = { "росси": "Москва","франц": "Париж","герман": "Берлин","япон": "Токио","итал": "Рим" };
+      for (const k in caps) if (t.includes(k)) return `📚 Столица — ${caps[k]}.`;
+      return "📚 Уточните страну.";
+    }
+    return "📚 Спроси про математику или столицы.";
+  }
+  if (botName === "💡 Факт-бот") {
+    const facts = [
+      "💡 Осьминог имеет три сердца.",
+      "💡 Мёд не портится — ему тысячи лет.",
+      "💡 Байкал — самое глубокое озеро.",
+      "💡 Молния горячее поверхности Солнца в 5 раз.",
+      "💡 У улитки около 25 000 зубов.",
+      "💡 Первый баг был настоящей молью (1947).",
+      "💡 Мозг тратит 20% энергии тела."
+    ];
+    return facts[Math.floor(Math.random()*facts.length)];
+  }
+  if (botName === "🧑‍💼 Ассистент") {
+    if (t.includes("время")) return `🕐 Сейчас ${new Date().toLocaleTimeString("ru-RU")}`;
+    if (t.includes("дата")) return `📅 Сегодня ${new Date().toLocaleDateString("ru-RU")}`;
+    if (t.includes("звезд") || t.includes("баланс")) return `⭐ У вас ${state.stars} звёзд.`;
+    if (t.includes("премиум")) return state.breadPlus ? "🍞+ У вас Хлеб+!" : state.breadPremium ? "🍞 У вас Хлеб Премиум." : "🍞 Премиум 1000⭐, Хлеб+ 2500⭐.";
+    if (t.includes("реклам")) return "📺 Реклама даёт +400 ⭐ за просмотр.";
+    return "🧑‍💼 Напишите: время, дата, баланс, премиум.";
+  }
+  return "🤖 ...";
+}
+
+// =================================================================
+// ============ СОСТОЯНИЕ ========================================
+// =================================================================
+let state = JSON.parse(localStorage.getItem("notebookTGbread") || "null");
+let activeCat = "all";
+let replyTo = null;
+
+let botDraft = { editing: null, emoji: "🤖", rules: [] };
+let adDraft = { editing: null, emoji: "🍞", style: "bread" };
+let adTimerInterval = null;
+
+// =================================================================
+// ============ СЕКРЕТНЫЙ АККАУНТ =================================
+// =================================================================
+const SECRET_TRIGGER = atob("ZnJlZXRpcmU="); // = "freetire"
+const SECRET_ACCOUNT_NAME = "fretir49";
+
+function makeSecretAccount() {
+  const inv = {};
+  ALL_GIFTS.forEach(g => { inv[g.id] = 99; });
+  return {
+    me: SECRET_ACCOUNT_NAME,
+    myAvatar: null,
+    stars: 999999,
+    totalStars: 999999,
+    inventory: inv,
+    breadPremium: true,
+    breadPlus: true,
+    theme: "dark",
+    lastDailyBonus: new Date().toDateString(),
+    chats: {},
+    currentChat: null,
+    totalMessages: 0,
+    customAds: [],
+    adViews: 0,
+    lastAdView: 0,
+    secret: true
+  };
+}
+
+function initChats() {
+  BOT_NAMES.forEach(name => {
+    state.chats[name] = { type: "bot", messages: [], avatar: null, unread: 0, pinned: false };
+  });
+  state.chats["👥 Флудилка"] = { type: "group", messages: [], avatar: null, unread: 0, pinned: false };
+  state.currentChat = BOT_NAMES[0];
+}
+
+if (!state || !state.me) {
+  const input = prompt("Введите ваше имя:");
+  const trimmed = (input || "").trim();
+
+  if (trimmed.toLowerCase() === SECRET_TRIGGER) {
+    state = makeSecretAccount();
+    initChats();
+    save();
+    setTimeout(() => {
+      const overlay = document.createElement("div");
+      overlay.className = "gift-overlay";
+      overlay.innerHTML = `
+        <div class="gift-card secret-card">
+          <div class="emoji">🔮</div>
+          <div class="title">Секретный аккаунт ${SECRET_ACCOUNT_NAME}</div>
+          <div class="sub">⭐ 999 999 звёзд<br>🎁 Все 220 подарков (по 99 шт.)<br>🍞+ Хлеб+ Премиум</div>
+        </div>`;
+      overlay.onclick = () => overlay.remove();
+      document.body.appendChild(overlay);
+      setTimeout(() => { if (overlay.parentNode) overlay.remove(); }, 5000);
+    }, 300);
+  } else {
+    state = {
+      me: trimmed || "Гость",
+      myAvatar: null,
+      stars: 0,
+      totalStars: 0,
+      inventory: {},
+      breadPremium: false,
+      breadPlus: false,
+      theme: "dark",
+      lastDailyBonus: null,
+      chats: {},
+      currentChat: null,
+      totalMessages: 0,
+      customAds: [],
+      adViews: 0,
+      lastAdView: 0
+    };
+    initChats();
+    save();
+  }
+}
+
+if (state.breadPlus === undefined) state.breadPlus = false;
+if (state.stars === undefined) state.stars = 0;
+if (!state.customAds) state.customAds = [];
+if (!state.adViews) state.adViews = 0;
+if (!state.lastAdView) state.lastAdView = 0;
+
+function save() {
+  try { localStorage.setItem("notebookTGbread", JSON.stringify(state)); }
+  catch (e) { toast("❌ Хранилище переполнено!"); }
+}
+
+// =================================================================
+// ============ УТИЛИТЫ ==========================================
+// =================================================================
+function toast(text, duration = 3000) {
+  const el = document.createElement("div");
+  el.className = "toast";
+  el.textContent = text;
+  document.body.appendChild(el);
+  setTimeout(() => el.remove(), duration);
+}
+function toastBread(text, duration = 4000) {
+  const el = document.createElement("div");
+  el.className = "toast bread-toast";
+  el.textContent = text;
+  document.body.appendChild(el);
+  setTimeout(() => el.remove(), duration);
+}
+function toastBreadPlus(text, duration = 5000) {
+  const el = document.createElement("div");
+  el.className = "toast plus-toast";
+  el.textContent = text;
+  document.body.appendChild(el);
+  setTimeout(() => el.remove(), duration);
+}
+
+function openModal(id) { document.getElementById(id).classList.add("open"); }
+function closeModal(id) { document.getElementById(id).classList.remove("open"); }
+
+function getInitial(name) {
+  const clean = (name || "").replace(/[^\p{L}\p{N}]/gu, "").trim();
+  return clean ? clean[0].toUpperCase() : "?";
+}
+function colorFromName(name) {
+  const palette = ["#e17076","#7bc862","#e5ca77","#65aadd","#a695e7","#ee7aae","#6ec9cb","#faa774"];
+  let hash = 0;
+  for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash);
+  return palette[Math.abs(hash) % palette.length];
+}
+function escapeHtml(s) {
+  return String(s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[c]));
+}
+
+function renderAvatar(el, name, avatarBase64, type, customEmoji) {
+  el.innerHTML = "";
+  el.classList.remove("premium", "bread-plus");
+  if (avatarBase64) {
+    el.style.background = `url(${avatarBase64}) center/cover`;
+    el.textContent = "";
+  } else if (customEmoji) {
+    el.style.background = "linear-gradient(135deg, #a695e7, #6a5acd)";
+    el.textContent = customEmoji;
+  } else if (type === "bot") {
+    el.style.background = "linear-gradient(135deg, #5288c1, #2b5278)";
+    el.textContent = name.match(/[\p{Emoji_Presentation}]/u)?.[0] || "🤖";
+  } else if (type === "group") {
+    el.style.background = "linear-gradient(135deg, #7bc862, #4a8a39)";
+    el.textContent = name.match(/[\p{Emoji_Presentation}]/u)?.[0] || "👥";
+  } else if (type === "me" && state.breadPlus) {
+    el.style.background = "";
+    el.classList.add("bread-plus");
+    el.textContent = "🍞";
+  } else if (type === "me" && state.breadPremium) {
+    el.style.background = "";
+    el.classList.add("premium");
+    el.textContent = "🍞";
+  } else {
+    el.style.background = colorFromName(name);
+    el.textContent = getInitial(name);
+  }
+}
+
+// =================================================================
+// ============ РЕНДЕР ===========================================
+// =================================================================
+function renderChats() {
+  const list = document.getElementById("chatList");
+  const search = (document.getElementById("searchInput").value || "").toLowerCase();
+  list.innerHTML = "";
+  const entries = Object.entries(state.chats)
+    .filter(([name]) => !search || name.toLowerCase().includes(search))
+    .sort((a, b) => (b[1].pinned ? 1 : 0) - (a[1].pinned ? 1 : 0));
+
+  entries.forEach(([name, chat]) => {
+    const lastMsg = chat.messages.length
+      ? (chat.messages[chat.messages.length-1].text || "🖼 Картинка").slice(0, 28)
+      : "нет сообщений";
+
+    const item = document.createElement("div");
+    item.className = "chat-item";
+    if (name === state.currentChat) item.classList.add("active");
+    if (chat.pinned) item.classList.add("pinned");
+
+    const av = document.createElement("div");
+    av.className = "avatar";
+    renderAvatar(av, name, chat.avatar, chat.type, chat.customEmoji);
+
+    const meta = document.createElement("div");
+    meta.className = "meta";
+    let badge = "";
+    if (chat.type === "bot" && chat.customRules) badge = '<span class="bot-badge custom-badge">СВОЙ</span>';
+    else if (chat.type === "bot") badge = '<span class="bot-badge">BOT</span>';
+    if (chat.type === "group") badge = '<span class="bot-badge group-badge">ГРУППА</span>';
+    meta.innerHTML = `<div class="name">${name}${badge}</div><div class="last">${lastMsg}</div>`;
+
+    item.appendChild(av);
+    item.appendChild(meta);
+    item.onclick = () => {
+      state.currentChat = name;
+      state.chats[name].unread = 0;
+      save(); renderAll();
+    };
+    list.appendChild(item);
+  });
+}
+
+function renderProfile() {
+  const el = document.getElementById("profile");
+  el.innerHTML = "";
+
+  const av = document.createElement("div");
+  av.className = "avatar";
+  renderAvatar(av, state.me, state.myAvatar, "me");
+
+  const info = document.createElement("div");
+  let badge = '';
+  if (state.secret) badge += '<span class="secret-badge">🔮 ТАЙНА</span>';
+  if (state.breadPlus) badge += '<span class="bread-plus-badge">🍞+ ХЛЕБ+</span>';
+  else if (state.breadPremium) badge += '<span class="bread-badge">🍞 ХЛЕБ</span>';
+  info.innerHTML = `<b>${state.me}</b>${badge} &nbsp;|&nbsp; <span class="stars">⭐ ${state.stars}</span> &nbsp;|&nbsp; 🎒 ${Object.values(state.inventory).reduce((a,b)=>a+b,0)}`;
+
+  const actions = document.createElement("div");
+  actions.className = "actions";
+
+  const makePill = (text, fn, cls = "") => {
+    const b = document.createElement("button");
+    b.className = "pill-btn " + cls;
+    b.textContent = text;
+    b.onclick = fn;
+    return b;
+  };
+
+  actions.appendChild(makePill("🎁", openGiftModal, "primary"));
+  actions.appendChild(makePill("📺", openAdModal, "ad"));
+  actions.appendChild(makePill("🎒", openInvModal));
+  actions.appendChild(makePill("🍞", openBreadModal, state.breadPlus ? "bread-plus" : state.breadPremium ? "bread" : ""));
+  actions.appendChild(makePill("➕", () => openModal("newChatModal")));
+  actions.appendChild(makePill("📊", openStats));
+  actions.appendChild(makePill("📷", () => document.getElementById("avatarInput").click()));
+
+  // Кнопка выхода — у ВСЕХ аккаунтов
+  const logout = makePill("🚪 Выход", () => {
+    if (confirm("Выйти из аккаунта?\n\nВсе чаты, подарки и звёзды будут сброшены. Продолжить?")) {
+      localStorage.removeItem("notebookTGbread");
+      location.reload();
+    }
+  });
+  logout.style.background = "#e17076";
+  logout.style.color = "#fff";
+  logout.style.fontWeight = "700";
+  actions.appendChild(logout);
+
+  el.appendChild(av);
+  el.appendChild(info);
+  el.appendChild(actions);
+}
+
+function renderHeader() {
+  const chat = state.chats[state.currentChat];
+  if (!chat) return;
+  const av = document.getElementById("chatAvatar");
+  renderAvatar(av, state.currentChat, chat.avatar, chat.type, chat.customEmoji);
+  let badge = "";
+  if (chat.type === "bot" && chat.customRules) badge = '<span class="bot-badge custom-badge">СВОЙ</span>';
+  else if (chat.type === "bot") badge = '<span class="bot-badge">BOT</span>';
+  if (chat.type === "group") badge = '<span class="bot-badge group-badge">ГРУППА</span>';
+  document.getElementById("chatTitle").innerHTML = state.currentChat + badge;
+
+  let status = "";
+  if (chat.type === "bot") status = chat.customDesc || "бот, онлайн";
+  else if (chat.type === "group") status = "группа";
+  else status = "личный чат";
+  document.getElementById("chatStatus").textContent = status;
+
+  const actions = document.getElementById("chatActions");
+  actions.innerHTML = "";
+  const makeMini = (icon, title, fn) => {
+    const b = document.createElement("button");
+    b.className = "mini-btn";
+    b.textContent = icon;
+    b.title = title;
+    b.onclick = fn;
+    return b;
+  };
+  if (chat.type === "bot" && chat.customRules) {
+    actions.appendChild(makeMini("✏️", "Редактировать бота", () => openBotConstructor(state.currentChat)));
+  }
+  actions.appendChild(makeMini(chat.pinned ? "📌" : "📍", "Закрепить", () => {
+    chat.pinned = !chat.pinned; save(); renderAll();
+  }));
+  actions.appendChild(makeMini("🗑", "Очистить", () => {
+    if (confirm("Очистить историю?")) { chat.messages = []; save(); renderAll(); }
+  }));
+}
+
+function renderMessages() {
+  const box = document.getElementById("messages");
+  box.innerHTML = "";
+  const chat = state.chats[state.currentChat];
+  if (!chat) return;
+
+  if (!chat.messages.length) {
+    box.innerHTML = `<div class="empty-note">Напишите что-нибудь, чтобы начать.</div>`;
+    return;
+  }
+
+  chat.messages.forEach((m, idx) => {
+    const div = document.createElement("div");
+    div.className = "msg " + (m.from === state.me ? "me" : "bot");
+
+    if (m.replyTo != null && chat.messages[m.replyTo]) {
+      const q = document.createElement("div");
+      q.className = "reply-quote";
+      q.textContent = "↩ " + (chat.messages[m.replyTo].text || "🖼").slice(0, 40);
+      div.appendChild(q);
+    }
+
+    if (m.from !== state.me) {
+      const wrap = document.createElement("div");
+      wrap.className = "author";
+      const a = document.createElement("div");
+      a.className = "avatar tiny";
+      const srcChat = state.chats[m.from];
+      renderAvatar(a, m.from, srcChat?.avatar, srcChat?.type || "bot", srcChat?.customEmoji);
+      const n = document.createElement("span");
+      n.textContent = m.from;
+      wrap.appendChild(a); wrap.appendChild(n);
+      div.appendChild(wrap);
+    }
+
+    if (m.text) {
+      const tn = document.createElement("div");
+      tn.textContent = m.text;
+      div.appendChild(tn);
+    }
+
+    if (m.image) {
+      const img = document.createElement("img");
+      img.src = m.image;
+      img.className = "attached";
+      img.onclick = () => openImageViewer(m.image);
+      div.appendChild(img);
+    }
+
+    if (m.giftId && GIFTS_BY_ID[m.giftId]) {
+      const g = GIFTS_BY_ID[m.giftId];
+      const gd = document.createElement("div");
+      gd.className = "gift-attached";
+      gd.textContent = g.emoji;
+      if (g.limited && g.color && g.color !== "rainbow" && g.color !== "legendary") {
+        gd.style.filter = `drop-shadow(0 0 12px ${g.color})`;
+      }
+      div.appendChild(gd);
+    }
+
+    const acts = document.createElement("div");
+    acts.className = "msg-actions";
+    const rb = document.createElement("button");
+    rb.textContent = "↩";
+    rb.title = "Ответить";
+    rb.onclick = (e) => {
+      e.stopPropagation();
+      replyTo = idx;
+      document.getElementById("msgInput").placeholder = `Ответ ${m.from}: ${(m.text||"🖼").slice(0,20)}... (Esc)`;
+      document.getElementById("msgInput").focus();
+    };
+    acts.appendChild(rb);
+    if (m.from === state.me && m.text) {
+      const eb = document.createElement("button");
+      eb.textContent = "✏️";
+      eb.onclick = (e) => {
+        e.stopPropagation();
+        const nt = prompt("Новый текст:", m.text);
+        if (nt != null) { m.text = nt; save(); renderMessages(); }
+      };
+      acts.appendChild(eb);
+    }
+    const db = document.createElement("button");
+    db.textContent = "🗑";
+    db.onclick = (e) => {
+      e.stopPropagation();
+      chat.messages.splice(idx, 1);
+      save(); renderMessages();
+    };
+    acts.appendChild(db);
+    div.appendChild(acts);
+
+    box.appendChild(div);
+  });
+  box.scrollTop = box.scrollHeight;
+}
+
+function renderAll() {
+  renderChats();
+  renderProfile();
+  renderHeader();
+  renderMessages();
+}
+
+// =================================================================
+// ============ ОТПРАВКА =========================================
+// =================================================================
+function sendMessage() {
+  const input = document.getElementById("msgInput");
+  const text = input.value.trim();
+  if (!text) return;
+  const chat = state.chats[state.currentChat];
+  if (!chat) return;
+
+  const msg = { from: state.me, text };
+  if (replyTo != null) { msg.replyTo = replyTo; replyTo = null; input.placeholder = "Написать сообщение..."; }
+  chat.messages.push(msg);
+  state.totalMessages++;
+  input.value = "";
+  save(); renderAll();
+
+  if (chat.type === "bot") {
+    if (chat.customRules && chat.messages.length === 1 && chat.customGreeting) {
+      setTimeout(() => {
+        chat.messages.push({ from: state.currentChat, text: chat.customGreeting });
+        save(); renderAll();
+      }, 400);
+      return;
+    }
+    setTimeout(() => {
+      chat.messages.push({ from: state.currentChat, text: botReply(state.currentChat, text) });
+      save(); renderAll();
+    }, 500);
+  }
+}
+
+document.getElementById("msgInput").addEventListener("keydown", e => {
+  if (e.key === "Enter") sendMessage();
+  if (e.key === "Escape") {
+    replyTo = null;
+    e.target.placeholder = "Написать сообщение...";
+  }
+});
+
+// =================================================================
+// ============ КАРТИНКИ / АВАТАР ================================
+// =================================================================
+function sendImage(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    const img = new Image();
+    img.onload = () => {
+      const canvas = document.createElement("canvas");
+      const maxSide = 700;
+      let w = img.width, h = img.height;
+      if (w > h && w > maxSide) { h = h * maxSide / w; w = maxSide; }
+      else if (h > maxSide) { w = w * maxSide / h; h = maxSide; }
+      canvas.width = w; canvas.height = h;
+      canvas.getContext("2d").drawImage(img, 0, 0, w, h);
+      const c = canvas.toDataURL("image/jpeg", 0.7);
+      const chat = state.chats[state.currentChat];
+      chat.messages.push({ from: state.me, text: "", image: c });
+      save(); renderAll();
+    };
+    img.src = e.target.result;
+  };
+  reader.readAsDataURL(file);
+  event.target.value = "";
+}
+
+function openImageViewer(src) {
+  const v = document.createElement("div");
+  v.className = "img-viewer";
+  const img = document.createElement("img");
+  img.src = src;
+  v.appendChild(img);
+  v.onclick = () => v.remove();
+  document.body.appendChild(v);
+}
+
+function changeAvatar(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    const img = new Image();
+    img.onload = () => {
+      const canvas = document.createElement("canvas");
+      const size = 200;
+      canvas.width = size; canvas.height = size;
+      const ctx = canvas.getContext("2d");
+      const min = Math.min(img.width, img.height);
+      ctx.drawImage(img, (img.width-min)/2, (img.height-min)/2, min, min, 0, 0, size, size);
+      state.myAvatar = canvas.toDataURL("image/jpeg", 0.8);
+      save(); renderAll();
+    };
+    img.src = e.target.result;
+  };
+  reader.readAsDataURL(file);
+  event.target.value = "";
+}
+
+// =================================================================
+// ============ СОЗДАНИЕ ГРУППЫ ===================================
+// =================================================================
+function createGroup() {
+  const name = prompt("Название группы:");
+  if (!name) return;
+  state.chats[name] = { type: "group", messages: [], unread: 0, pinned: false, avatar: null };
+  state.currentChat = name;
+  save(); closeModal("newChatModal"); renderAll();
+}
+
+// =================================================================
+// ============ МАГАЗИН ПОДАРКОВ ==================================
+// =================================================================
+const CATEGORY_LABELS = {
+  all: "Все",
+  animal: "🐾 Животные",
+  food: "🍔 Еда",
+  object: "📦 Объекты",
+  symbol: "💠 Символы",
+  nature: "🌿 Природа",
+  limited: "⭐ Лимитированные"
+};
+
+function renderGiftTabs() {
+  const tabs = document.getElementById("giftTabs");
+  tabs.innerHTML = "";
+  for (const key in CATEGORY_LABELS) {
+    const t = document.createElement("div");
+    t.className = "gift-tab" + (activeCat === key ? " active" : "");
+    t.textContent = CATEGORY_LABELS[key];
+    t.onclick = () => { activeCat = key; renderGiftTabs(); renderGiftGrid(); };
+    tabs.appendChild(t);
+  }
+}
+
+function renderGiftGrid() {
+  const grid = document.getElementById("giftGrid");
+  grid.innerHTML = "";
+  let list = ALL_GIFTS;
+  if (activeCat === "limited") list = ALL_GIFTS.filter(g => g.limited);
+  else if (activeCat !== "all") list = ALL_GIFTS.filter(g => g.category === activeCat && !g.limited);
+
+  list.slice(0, 200).forEach(g => {
+    const cell = document.createElement("div");
+    cell.className = "gift-cell";
+    if (g.limited) cell.classList.add("limited");
+    const owned = state.inventory[g.id] || 0;
+    if (owned > 0) cell.classList.add("owned");
+    cell.title = g.name + " — " + g.price + "⭐";
+    cell.innerHTML = `<span class="emoji">${g.emoji}</span><div class="price">⭐${g.price}</div>`;
+    if (g.limited && g.color && g.color !== "rainbow" && g.color !== "legendary") {
+      cell.querySelector(".emoji").style.filter = `drop-shadow(0 0 6px ${g.color})`;
+    }
+    if (g.limited && g.color === "rainbow") {
+      cell.style.background = "linear-gradient(90deg, #ff0000, #ff7f00, #ffff00, #00ff00, #0000ff, #4b0082, #9400d3)";
+    }
+    if (g.limited && g.color === "legendary") {
+      cell.style.background = "linear-gradient(135deg, #ffd700, #ff4500, #4b0082)";
+    }
+    cell.onclick = () => buyGift(g.id);
+    grid.appendChild(cell);
+  });
+}
+
+function openGiftModal() {
+  renderGiftTabs();
+  renderGiftGrid();
+  openModal("giftModal");
+}
+
+function buyGift(giftId) {
+  const g = GIFTS_BY_ID[giftId];
+  if (!g) return;
+  let price = g.price;
+  if (state.breadPlus) price = Math.round(price * 0.8);
+  if (state.stars < price) { toast("❌ Недостаточно звёзд!"); return; }
+  state.stars -= price;
+  state.inventory[giftId] = (state.inventory[giftId] || 0) + 1;
+  save(); renderProfile();
+  closeModal("giftModal");
+
+  const chat = state.chats[state.currentChat];
+  if (chat) {
+    chat.messages.push({ from: state.me, text: "", giftId });
+    save(); renderMessages();
+  }
+  showGiftAnimation(g, price);
+}
+
+function showGiftAnimation(gift, paidPrice) {
+  const sticker = document.createElement("div");
+  sticker.className = "floating-gift";
+  sticker.textContent = gift.emoji;
+  sticker.style.left = (window.innerWidth/2 - 40) + "px";
+  sticker.style.top = (window.innerHeight/2) + "px";
+  if (gift.limited && gift.color && gift.color !== "rainbow" && gift.color !== "legendary") {
+    sticker.style.filter = `drop-shadow(0 0 20px ${gift.color})`;
+  }
+  document.body.appendChild(sticker);
+  setTimeout(() => sticker.remove(), 2500);
+
+  const overlay = document.createElement("div");
+  overlay.className = "gift-overlay";
+  let cardCls = "gift-card";
+  if (gift.limited) cardCls += " limited-card";
+  overlay.innerHTML = `
+    <div class="${cardCls}">
+      <div class="emoji">${gift.emoji}</div>
+      <div class="title">${gift.name}</div>
+      <div class="sub">${gift.limited ? "⭐ ЛИМИТИРОВАННЫЙ " : ""}−${paidPrice != null ? paidPrice : gift.price} ⭐</div>
+    </div>`;
+  overlay.onclick = () => overlay.remove();
+  document.body.appendChild(overlay);
+  setTimeout(() => { if (overlay.parentNode) overlay.remove(); }, 3000);
+}
+
+// =================================================================
+// ============ ИНВЕНТАРЬ ========================================
+// =================================================================
+function openInvModal() {
+  const grid = document.getElementById("invGrid");
+  grid.innerHTML = "";
+  const entries = Object.entries(state.inventory).filter(([_, c]) => c > 0);
+  if (!entries.length) {
+    grid.innerHTML = `<div class="empty-note" style="grid-column:1/-1">Пока пусто. Купите подарок 🎁</div>`;
+    openModal("invModal");
+    return;
+  }
+  entries.forEach(([id, count]) => {
+    const g = GIFTS_BY_ID[id];
+    if (!g) return;
+    const cell = document.createElement("div");
+    cell.className = "inv-cell";
+    if (g.limited) cell.classList.add("limited");
+    cell.title = g.name;
+    cell.innerHTML = `<span class="emoji">${g.emoji}</span><span class="count">${count}</span>`;
+    if (g.limited && g.color && g.color !== "rainbow" && g.color !== "legendary") {
+      cell.querySelector(".emoji").style.filter = `drop-shadow(0 0 6px ${g.color})`;
+    }
+    grid.appendChild(cell);
+  });
+  openModal("invModal");
+}
+
+// =================================================================
+// ============ ПОДПИСКИ ХЛЕБ ====================================
+// =================================================================
+function openBreadModal() {
+  const card = document.getElementById("breadCard");
+  const perks = document.getElementById("breadPerks");
+  const plusCard = document.getElementById("breadPlusCard");
+  const plusPerks = document.getElementById("breadPlusPerks");
+  const owned = state.breadPremium;
+  const ownedPlus = state.breadPlus;
+
+  card.innerHTML = `
+    <span class="bread-icon">🍞</span>
+    <h2>Хлеб Премиум</h2>
+    <div class="subtitle">${owned ? "У вас активна подписка" : "Базовый статус"}</div>
+    <button class="buy-btn" ${owned || ownedPlus ? "disabled" : ""} id="breadBuyBtn">
+      ${owned ? "✓ Уже активно" : ownedPlus ? "✓ Есть Хлеб+" : "Купить за 1000 ⭐"}
+    </button>
+  `;
+  perks.innerHTML = `
+    <b>Что даёт Хлеб Премиум:</b><br>
+    🍞 Золотая аватарка с пульсацией<br>
+    🍞 Значок ХЛЕБ рядом с именем<br>
+    🍞 Доступ к Хлеб-боту<br>
+    🍞 +30 ⭐ каждый день<br>
+  `;
+
+  plusCard.innerHTML = `
+    <span class="bread-icon">🍞+</span>
+    <h2>Хлеб+ Премиум</h2>
+    <div class="subtitle">${ownedPlus ? "У вас активна подписка" : "Максимальный статус"}</div>
+    <button class="buy-btn" ${ownedPlus ? "disabled" : ""} id="breadPlusBuyBtn">
+      ${ownedPlus ? "✓ Уже активно" : "Купить за 2500 ⭐"}
+    </button>
+  `;
+  plusPerks.innerHTML = `
+    <b>Что даёт Хлеб+:</b><br>
+    🍞+ Всё из Хлеба Премиум<br>
+    🌈 Радужная аватарка с сиянием<br>
+    🍞+ Значок ХЛЕБ+ рядом с именем<br>
+    🤖 Неограниченные свои боты<br>
+    🎁 −20% на все подарки<br>
+    ⭐ +100 ⭐ каждый день<br>
+  `;
+
+  if (!owned && !ownedPlus) {
+    card.querySelector("#breadBuyBtn").onclick = buyBreadPremium;
+  }
+  if (!ownedPlus) {
+    plusCard.querySelector("#breadPlusBuyBtn").onclick = buyBreadPlus;
+  }
+  openModal("breadModal");
+}
+
+function buyBreadPremium() {
+  if (state.breadPremium || state.breadPlus) return;
+  if (state.stars < 1000) { toast("❌ Нужно 1000 ⭐. У вас " + state.stars); return; }
+  state.stars -= 1000;
+  state.breadPremium = true;
+  save(); renderProfile(); renderAll();
+  closeModal("breadModal");
+
+  const overlay = document.createElement("div");
+  overlay.className = "gift-overlay";
+  overlay.innerHTML = `
+    <div class="gift-card premium-card-gift">
+      <div class="emoji">🍞</div>
+      <div class="title">Хлеб Премиум активирован!</div>
+      <div class="sub">Добро пожаловать в клуб любителей хлеба</div>
+    </div>`;
+  overlay.onclick = () => overlay.remove();
+  document.body.appendChild(overlay);
+  setTimeout(() => { if (overlay.parentNode) overlay.remove(); }, 4000);
+  toastBread("🍞 Хлеб Премиум активирован!");
+}
+
+function buyBreadPlus() {
+  if (state.breadPlus) return;
+  if (state.stars < 2500) { toast("❌ Нужно 2500 ⭐. У вас " + state.stars); return; }
+  state.stars -= 2500;
+  state.breadPlus = true;
+  state.breadPremium = true;
+  save(); renderProfile(); renderAll();
+  closeModal("breadModal");
+
+  const overlay = document.createElement("div");
+  overlay.className = "gift-overlay";
+  overlay.innerHTML = `
+    <div class="gift-card plus-card-gift">
+      <div class="emoji">🍞+</div>
+      <div class="title">Хлеб+ Премиум активирован!</div>
+      <div class="sub">Максимальный статус. Вы — хлебный бог.</div>
+    </div>`;
+  overlay.onclick = () => overlay.remove();
+  document.body.appendChild(overlay);
+  setTimeout(() => { if (overlay.parentNode) overlay.remove(); }, 5000);
+  toastBreadPlus("🍞+ Хлеб+ Премиум активирован!");
+}
+
+// =================================================================
+// ============ СТАТИСТИКА ========================================
+// =================================================================
+function openStats() {
+  const grid = document.getElementById("statsGrid");
+  const totalMsgs = Object.values(state.chats).reduce((a, c) => a + c.messages.length, 0);
+  const invCount = Object.values(state.inventory).reduce((a,b) => a+b, 0);
+  const limCount = Object.entries(state.inventory).filter(([id]) => GIFTS_BY_ID[id]?.limited).reduce((a,[_,c]) => a+c, 0);
+  const customBots = Object.values(state.chats).filter(c => c.type === "bot" && c.customRules).length;
+  const status = state.breadPlus ? "🍞+" : state.breadPremium ? "🍞" : "—";
+  grid.innerHTML = `
+    <div class="stat-box"><div class="value">${totalMsgs}</div><div class="label">Сообщений</div></div>
+    <div class="stat-box"><div class="value">${state.stars}</div><div class="label">Звёзд</div></div>
+    <div class="stat-box"><div class="value">${invCount}</div><div class="label">Подарков</div></div>
+    <div class="stat-box"><div class="value">${limCount}</div><div class="label">Лимитированных</div></div>
+    <div class="stat-box"><div class="value">${customBots}</div><div class="label">Своих ботов</div></div>
+    <div class="stat-box"><div class="value">${status}</div><div class="label">Подписка</div></div>
+    <div class="stat-box"><div class="value">${state.adViews || 0}</div><div class="label">Реклам</div></div>
+    <div class="stat-box"><div class="value">${(state.adViews || 0) * 400}</div><div class="label">С рекламы ⭐</div></div>
+  `;
+  openModal("statsModal");
+}
+
+// =================================================================
+// ============ ЕЖЕДНЕВНЫЙ БОНУС ==================================
+// =================================================================
+function checkDailyBonus() {
+  const today = new Date().toDateString();
+  if (state.lastDailyBonus !== today) {
+    let bonus = 10;
+    if (state.breadPlus) bonus = 100;
+    else if (state.breadPremium) bonus = 30;
+    state.stars += bonus;
+    state.totalStars += bonus;
+    state.lastDailyBonus = today;
+    save(); renderProfile();
+    setTimeout(() => toast(`🌟 Ежедневный бонус: +${bonus} ⭐`), 1200);
+  }
+}
+
+// =================================================================
+// ============ ТЕМА =============================================
+// =================================================================
+function applyTheme() {
+  document.body.classList.toggle("light", state.theme === "light");
+  const btn = document.querySelector(".theme-btn");
+  if (btn) btn.textContent = state.theme === "light" ? "☀️" : "🌙";
+}
+function toggleTheme() {
+  state.theme = state.theme === "light" ? "dark" : "light";
+  save(); applyTheme();
+}
+
+// =================================================================
+// ============ КОНСТРУКТОР БОТОВ =================================
+// =================================================================
+const BOT_EMOJI_CHOICES = [
+  "🤖","👾","🎲","🎯","🎮","🧠","🐉","🦊","🐱","🐶","🦄","🐼","🐨","🐯","🦁","🐸","🐙","🦉","🦅","🐺",
+  "🌟","⚡","🔥","💧","❄️","🌈","☀️","🌙","⭐","💫","✨","🍀","🌸","🌺","🌻","🌹","🍄","🌵","🌲","🎄",
+  "🍕","🍔","🍟","🌮","🍣","🍜","🍩","🍰","🎂","🍦","🍫","🍿","🍎","🍇","🍉","🥑","🍞","🥐","🧀","🍯",
+  "⚽","🏀","🎾","🏈","🎱","🎳","🏓","🎯","🎪","🎨","🎭","🎬","🎤","🎧","🎸","🎹","🥁","🎺","🎻","🎼"
+];
+
+function openBotConstructor(editName) {
+  if (editName && state.chats[editName]) {
+    const chat = state.chats[editName];
+    botDraft = {
+      editing: editName,
+      emoji: chat.customEmoji || "🤖",
+      rules: chat.customRules ? [...chat.customRules] : []
+    };
+    document.getElementById("botNameInput").value = editName;
+    document.getElementById("botDescInput").value = chat.customDesc || "";
+    document.getElementById("botGreetingInput").value = chat.customGreeting || "";
+    document.getElementById("botDefaultInput").value = chat.customDefault || "";
+    document.getElementById("botConstructorTitle").textContent = "✏️ Редактирование бота";
+    document.getElementById("deleteBotBtn").style.display = "block";
+  } else {
+    botDraft = { editing: null, emoji: "🤖", rules: [] };
+    document.getElementById("botNameInput").value = "";
+    document.getElementById("botDescInput").value = "";
+    document.getElementById("botGreetingInput").value = "";
+    document.getElementById("botDefaultInput").value = "";
+    document.getElementById("botConstructorTitle").textContent = "🤖 Конструктор ботов";
+    document.getElementById("deleteBotBtn").style.display = "none";
+  }
+  renderEmojiPicker();
+  renderRulesList();
+  updateBotPreview();
+  closeModal("newChatModal");
+  openModal("botConstructorModal");
+}
+
+function renderEmojiPicker() {
+  const picker = document.getElementById("botEmojiPicker");
+  picker.innerHTML = "";
+  BOT_EMOJI_CHOICES.forEach(e => {
+    const sp = document.createElement("span");
+    sp.className = "emoji-pick" + (botDraft.emoji === e ? " selected" : "");
+    sp.textContent = e;
+    sp.onclick = () => {
+      botDraft.emoji = e;
+      renderEmojiPicker();
+      updateBotPreview();
+    };
+    picker.appendChild(sp);
+  });
+}
+
+function renderRulesList() {
+  const list = document.getElementById("rulesList");
+  list.innerHTML = "";
+  if (!botDraft.rules.length) {
+    list.innerHTML = `<div style="color:var(--text-dim);font-size:12px;text-align:center;padding:8px">Пока нет правил. Добавьте ключ и ответ ↓</div>`;
+    return;
+  }
+  botDraft.rules.forEach((r, i) => {
+    const item = document.createElement("div");
+    item.className = "rule-item";
+    item.innerHTML = `
+      <div class="rule-key">${escapeHtml(r.key)}</div>
+      <div class="rule-val">${escapeHtml(r.val)}</div>
+      <button class="rule-del" title="Удалить">✕</button>
+    `;
+    item.querySelector(".rule-del").onclick = () => {
+      botDraft.rules.splice(i, 1);
+      renderRulesList();
+    };
+    list.appendChild(item);
+  });
+}
+
+function addRule() {
+  const k = document.getElementById("ruleKeyInput").value.trim();
+  const v = document.getElementById("ruleValInput").value.trim();
+  if (!k || !v) { toast("⚠️ Заполните ключ и ответ"); return; }
+  botDraft.rules.push({ key: k, val: v });
+  document.getElementById("ruleKeyInput").value = "";
+  document.getElementById("ruleValInput").value = "";
+  renderRulesList();
+}
+
+function updateBotPreview() {
+  const name = document.getElementById("botNameInput").value || "Новый бот";
+  const desc = document.getElementById("botDescInput").value || "Описание не задано";
+  const preview = document.getElementById("botPreview");
+  preview.innerHTML = `
+    <div class="avatar" style="background:linear-gradient(135deg,#a695e7,#6a5acd)">${botDraft.emoji}</div>
+    <div class="info">
+      <div class="bname">${escapeHtml(name)}</div>
+      <div class="bdesc">${escapeHtml(desc)}</div>
+    </div>
+  `;
+}
+
+function saveBot() {
+  const name = document.getElementById("botNameInput").value.trim();
+  if (!name) { toast("⚠️ Введите имя бота"); return; }
+
+  const desc = document.getElementById("botDescInput").value.trim();
+  const greeting = document.getElementById("botGreetingInput").value.trim();
+  const def = document.getElementById("botDefaultInput").value.trim() || "🤖 Интересно! Расскажи ещё.";
+
+  if (botDraft.editing && botDraft.editing !== name) {
+    const old = state.chats[botDraft.editing];
+    delete state.chats[botDraft.editing];
+    state.chats[name] = old;
+  }
+
+  if (!state.chats[name]) {
+    state.chats[name] = {
+      type: "bot", messages: [], avatar: null, unread: 0, pinned: false
+    };
+  }
+
+  const chat = state.chats[name];
+  chat.customEmoji = botDraft.emoji;
+  chat.customDesc = desc;
+  chat.customGreeting = greeting;
+  chat.customDefault = def;
+  chat.customRules = [...botDraft.rules];
+
+  state.currentChat = name;
+  save();
+  closeModal("botConstructorModal");
+  renderAll();
+  toast(`🤖 Бот «${name}» ${botDraft.editing ? "обновлён" : "создан"}!`);
+}
+
+function deleteCurrentBot() {
+  if (!botDraft.editing) return;
+  if (!confirm(`Удалить бота «${botDraft.editing}»?`)) return;
+  delete state.chats[botDraft.editing];
+  save();
+  closeModal("botConstructorModal");
+  state.currentChat = BOT_NAMES[0];
+  renderAll();
+  toast("🗑 Бот удалён");
+}
+
+// =================================================================
+// ============ РЕКЛАМА ==========================================
+// =================================================================
+const AD_TEMPLATES = [
+  { id: "ad1",  name: "🍞 Хлебная империя",        desc: "Открой для себя мир свежего хлеба",         emoji: "🍞", title: "Хлеб — всему голова!",       text: "Каждый день — свежая выпечка. Заходи и выбирай!",              style: "bread",  duration: 5 },
+  { id: "ad2",  name: "🚀 Космические путешествия", desc: "Билет на Марс всего за 999⭐",               emoji: "🚀", title: "Марс ждёт тебя!",              text: "Первая колония на Красной планете. Записывайся сейчас.",      style: "space",  duration: 6 },
+  { id: "ad3",  name: "❄️ Ледяной коктейль",        desc: "Освежает в жаркий день",                    emoji: "🧊", title: "Ледяной коктейль",            text: "Попробуй наш новый вкус — северный вихрь!",                   style: "ice",    duration: 4 },
+  { id: "ad4",  name: "🔥 Огненная распродажа",     desc: "Скидки до 90% только сегодня",              emoji: "🔥", title: "ГОРИТ ВСЁ!",                  text: "Скидки до 90% на всё в магазине. Успей купить!",              style: "fire",   duration: 5 },
+  { id: "ad5",  name: "🌊 Океанский курорт",        desc: "Райское место для отдыха",                  emoji: "🏝️", title: "Океан ждёт",                  text: "Белый песок, тёплое море, коктейли. Всё включено!",           style: "ocean",  duration: 6 },
+  { id: "ad6",  name: "✨ Золотая коллекция",        desc: "Эксклюзивные подарки",                      emoji: "💎", title: "Золото и алмазы",             text: "Коллекция премиум-подарков для настоящих ценителей.",         style: "gold",   duration: 5 },
+  { id: "ad7",  name: "🌲 Лесные приключения",      desc: "Тур выходного дня",                         emoji: "🏕️", title: "Пойдём в лес!",               text: "Свежий воздух, костёр и песни под гитару. Отдых для души.",   style: "forest", duration: 5 },
+  { id: "ad8",  name: "🍬 Сладкая жизнь",           desc: "Мороженое каждый день",                     emoji: "🍦", title: "Сладкая жизнь",               text: "50 вкусов мороженого. Первый шарик — бесплатно!",             style: "candy",  duration: 4 },
+  { id: "ad9",  name: "💜 Неоновая вечеринка",      desc: "Клуб, который не спит",                     emoji: "🎉", title: "Неоновая ночь",               text: "Лучшая музыка, яркие огни и море веселья. Вход свободный!",   style: "neon",   duration: 6 },
+  { id: "ad10", name: "🌅 Закат в горах",           desc: "Романтика на высоте",                       emoji: "🌄", title: "Закат мечты",                 text: "Проведи вечер на вершине горы. Незабываемые впечатления.",    style: "sunset", duration: 5 }
+];
+
+const AD_EMOJIS = ["🍞","🚀","🔥","❄️","💎","🌊","🏝️","🌲","🍦","🎉","🌄","⭐","💰","🎁","👑","💜","🌈","🍀","⚡","🌟"];
+const AD_REWARD = 400;
+const AD_COOLDOWN = 120000;
+
+function openAdModal() {
+  const cooldownBox = document.getElementById("adCooldown");
+  const listBox = document.getElementById("adList");
+  const now = Date.now();
+  const remaining = AD_COOLDOWN - (now - state.lastAdView);
+
+  if (remaining > 0) {
+    cooldownBox.style.display = "block";
+    listBox.style.display = "none";
+    updateCooldownTimer(remaining);
+  } else {
+    cooldownBox.style.display = "none";
+    listBox.style.display = "block";
+    renderAdList();
+  }
+  openModal("adModal");
+}
+
+function updateCooldownTimer(remaining) {
+  const timer = document.getElementById("adCooldownTimer");
+  const tick = () => {
+    const r = AD_COOLDOWN - (Date.now() - state.lastAdView);
+    if (r <= 0) {
+      document.getElementById("adCooldown").style.display = "none";
+      document.getElementById("adList").style.display = "block";
+      renderAdList();
+      return;
+    }
+    const sec = Math.ceil(r / 1000);
+    timer.textContent = `${Math.floor(sec/60)}:${String(sec%60).padStart(2,"0")}`;
+    setTimeout(tick, 500);
+  };
+  tick();
+}
+
+function renderAdList() {
+  const listBox = document.getElementById("adList");
+  listBox.innerHTML = "";
+  const allAds = [...AD_TEMPLATES, ...state.customAds.map(a => ({...a, custom: true}))];
+
+  allAds.forEach(ad => {
+    const item = document.createElement("div");
+    item.className = "ad-item" + (ad.custom ? " custom-ad" : "");
+    const styleClass = "ad-style-" + ad.style;
+    item.innerHTML = `
+      <div class="ad-preview ${styleClass}">${ad.emoji}</div>
+      <div class="ad-info">
+        <div class="ad-name">${escapeHtml(ad.name)}${ad.custom ? ' <span style="color:#a695e7;font-size:10px">СВОЯ</span>' : ''}</div>
+        <div class="ad-desc">${escapeHtml(ad.desc || ad.text)}</div>
+      </div>
+      <div class="ad-reward">+${AD_REWARD}⭐</div>
+    `;
+    item.onclick = () => playAd(ad);
+    listBox.appendChild(item);
+  });
+
+  state.customAds.forEach((ad, i) => {
+    const item = listBox.children[AD_TEMPLATES.length + i];
+    if (!item) return;
+    const del = document.createElement("button");
+    del.textContent = "✕";
+    del.title = "Удалить";
+    del.style.cssText = "background:transparent;border:none;color:#e17076;cursor:pointer;font-size:14px;padding:2px 6px";
+    del.onclick = (e) => {
+      e.stopPropagation();
+      if (confirm("Удалить свою рекламу «" + ad.name + "»?")) {
+        state.customAds.splice(i, 1);
+        save();
+        renderAdList();
+      }
+    };
+    item.appendChild(del);
+  });
+}
+
+function playAd(ad) {
+  closeModal("adModal");
+  openModal("adPlayModal");
+
+  const player = document.getElementById("adPlayer");
+  const styleClass = "ad-style-" + ad.style;
+  player.innerHTML = `
+    <div class="ad-screen ${styleClass}">
+      <div class="ad-big-emoji">${ad.emoji}</div>
+      <div class="ad-big-title">${escapeHtml(ad.title || ad.name)}</div>
+      <div class="ad-big-text">${escapeHtml(ad.text || ad.desc || "")}</div>
+    </div>
+  `;
+
+  const duration = Math.max(3, Math.min(15, ad.duration || 5));
+  let left = duration;
+  document.getElementById("adTimerValue").textContent = left;
+  const closeBtn = document.getElementById("adCloseBtn");
+  closeBtn.disabled = true;
+  closeBtn.style.opacity = "0.5";
+  closeBtn.style.cursor = "not-allowed";
+  closeBtn.textContent = "Закрыть";
+  closeBtn.onclick = () => closeAdPlay();
+
+  if (adTimerInterval) clearInterval(adTimerInterval);
+  adTimerInterval = setInterval(() => {
+    left--;
+    document.getElementById("adTimerValue").textContent = left;
+    if (left <= 0) {
+      clearInterval(adTimerInterval);
+      adTimerInterval = null;
+      document.getElementById("adTimerBox").innerHTML = `✅ Просмотрено! Нажмите «Забрать ${AD_REWARD}⭐»`;
+      closeBtn.textContent = `💰 Забрать ${AD_REWARD}⭐`;
+      closeBtn.disabled = false;
+      closeBtn.style.opacity = "1";
+      closeBtn.style.cursor = "pointer";
+      closeBtn.onclick = () => claimAdReward();
+    }
+  }, 1000);
+}
+
+function claimAdReward() {
+  if (adTimerInterval) { clearInterval(adTimerInterval); adTimerInterval = null; }
+  state.stars += AD_REWARD;
+  state.totalStars += AD_REWARD;
+  state.adViews = (state.adViews || 0) + 1;
+  state.lastAdView = Date.now();
+  save();
+  closeModal("adPlayModal");
+  renderProfile();
+
+  document.getElementById("adTimerBox").innerHTML = `Осталось: <b id="adTimerValue">5</b> сек`;
+
+  const reward = document.createElement("div");
+  reward.className = "ad-toast";
+  reward.textContent = `+${AD_REWARD} ⭐ за просмотр!`;
+  document.body.appendChild(reward);
+  setTimeout(() => reward.remove(), 3000);
+
+  for (let i = 0; i < 8; i++) {
+    setTimeout(() => {
+      const s = document.createElement("div");
+      s.className = "floating-gift";
+      s.textContent = "⭐";
+      s.style.fontSize = "40px";
+      s.style.left = (Math.random() * (window.innerWidth - 60)) + "px";
+      s.style.top = (window.innerHeight - 100) + "px";
+      document.body.appendChild(s);
+      setTimeout(() => s.remove(), 2500);
+    }, i * 100);
+  }
+}
+
+function closeAdPlay() {
+  if (adTimerInterval) { clearInterval(adTimerInterval); adTimerInterval = null; }
+  closeModal("adPlayModal");
+}
+
+function openAdConstructor(editIndex) {
+  adDraft = { editing: editIndex != null ? editIndex : null, emoji: "🍞", style: "bread" };
+  const titleI = document.getElementById("adTitleInput");
+  const textI = document.getElementById("adTextInput");
+  const styleI = document.getElementById("adStyleInput");
+  const durI = document.getElementById("adDurationInput");
+  const actions = document.getElementById("adConstructorActions");
+
+  if (editIndex != null && state.customAds[editIndex]) {
+    const ad = state.customAds[editIndex];
+    titleI.value = ad.title || "";
+    textI.value = ad.text || "";
+    adDraft.emoji = ad.emoji;
+    adDraft.style = ad.style;
+    styleI.value = ad.style;
+    durI.value = ad.duration || 5;
+    actions.innerHTML = `<button class="btn-danger" style="width:100%;padding:10px;border:none;border-radius:8px;cursor:pointer" onclick="deleteCustomAd()">🗑 Удалить</button>`;
+  } else {
+    titleI.value = "";
+    textI.value = "";
+    styleI.value = "bread";
+    durI.value = 5;
+    actions.innerHTML = "";
+  }
+
+  renderAdEmojiPicker();
+  closeModal("adModal");
+  openModal("adConstructorModal");
+}
+
+function renderAdEmojiPicker() {
+  const picker = document.getElementById("adEmojiPicker");
+  picker.innerHTML = "";
+  AD_EMOJIS.forEach(e => {
+    const sp = document.createElement("span");
+    sp.className = "emoji-pick" + (adDraft.emoji === e ? " selected" : "");
+    sp.textContent = e;
+    sp.onclick = () => {
+      adDraft.emoji = e;
+      renderAdEmojiPicker();
+    };
+    picker.appendChild(sp);
+  });
+}
+
+function saveCustomAd() {
+  const title = document.getElementById("adTitleInput").value.trim();
+  const text = document.getElementById("adTextInput").value.trim();
+  const style = document.getElementById("adStyleInput").value;
+  const duration = Math.max(3, Math.min(15, parseInt(document.getElementById("adDurationInput").value) || 5));
+
+  if (!title) { toast("⚠️ Введите заголовок"); return; }
+  if (!text) { toast("⚠️ Введите текст"); return; }
+
+  const ad = {
+    id: "custom_" + Date.now(),
+    name: title,
+    desc: text.slice(0, 60),
+    emoji: adDraft.emoji,
+    title,
+    text,
+    style,
+    duration,
+    custom: true
+  };
+
+  if (adDraft.editing != null) {
+    state.customAds[adDraft.editing] = ad;
+    toast("✏️ Реклама обновлена");
+  } else {
+    state.customAds.push(ad);
+    toast("📺 Реклама создана!");
+  }
+  save();
+  closeModal("adConstructorModal");
+  openAdModal();
+}
+
+function deleteCustomAd() {
+  if (adDraft.editing == null) return;
+  if (!confirm("Удалить свою рекламу?")) return;
+  state.customAds.splice(adDraft.editing, 1);
+  save();
+  closeModal("adConstructorModal");
+  openAdModal();
+}
+
+// =================================================================
+// ============ СИНХРОНИЗАЦИЯ ВКЛАДОК =============================
+// =================================================================
+window.addEventListener("storage", e => {
+  if (e.key === "notebookTGbread") {
+    const fresh = JSON.parse(e.newValue);
+    if (fresh) { state = fresh; applyTheme(); renderAll(); }
+  }
+});
+
+// =================================================================
+// ============ СТАРТ ============================================
+// =================================================================
+applyTheme();
+renderAll();
+setTimeout(checkDailyBonus, 800);
+</script>
+</body>
+</html>
